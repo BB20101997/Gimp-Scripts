@@ -1,64 +1,29 @@
 
-(define (script-fu-add-layers-in-order l1 l2 l3 img form)
+(define (script-fu-add-layers-in-order layerlist img form)
 
 	(if (< 0 (length form))
 			
 			(let* 
 			(
 				(head (car form))
-			)
-			
-				(cond
-						((= head 1) 
-					
-							(let* 
-								(
-									(layer (car 
-												(gimp-layer-copy l1 FALSE)
-											) 
-									)
-								)
-								(gimp-item-set-name layer "Bild 1")
-								(gimp-image-add-layer img layer -1)			
-							)
-						)	
-			
-						((= head 2)
-							(let* 
-								(
-									(layer 
-										(car 
-												(gimp-layer-copy l2 FALSE)
-										) 
-									)
-								)
-								(gimp-item-set-name layer "Bild 2")
-								(gimp-image-add-layer img layer -1)			
-							)
+				(layerToCopy (list-ref layerlist (- head 1)))
+				(layer (car 
+							(gimp-layer-copy layerToCopy FALSE) 
 						)
-			
-						((= head 3)
-							(let* 
-								(
-									(layer (car 
-												(gimp-layer-copy l3 FALSE)
-											) 
-									)
-								)
-								(gimp-item-set-name layer "Bild 3")
-								(gimp-image-add-layer img layer -1)			
-							)
-						)
-					)	
+				)
+			)			
+				(gimp-item-set-name layer (string-append "Bild " (number->string head)))
 				
-				(script-fu-add-layers-in-order l1 l2 l3 img (cdr form))
+				(gimp-image-add-layer img layer -1)		
+				
+				(script-fu-add-layers-in-order layerlist img (cdr form))
 			)
 		
 		0
 	)
 )
 
-(define (script-fu-zwinker-gif width height)
+(define (script-fu-zwinker-gif width height pattern dir)
 	(let*
 	(
 		;define local variables
@@ -66,73 +31,35 @@
 		(img (car (gimp-image-new width height RGB)))
 		
 		(open 1)
-		;Benutzer
-		(user "Modding")
-		;Desktop Pfad warscheinlich Laufwerk C
-		(drive "D")
-		(pfad (string-append drive ":\\Users\\" user "\\Desktop\\"))
-		;(pfad (string-append %HOMEPATH% "\\Desktop\\"))
 		
-		(img1 (car
-					(file-png-load 
-					open
-					(string-append pfad "1.png")
-					"1"					
-					)
-				)
-		)
-		(img2 (car
-					(file-png-load 
-					open
-					(string-append pfad "2.png")
-					"2"					
-					)
-				)
-		)
-		(img3 (car
-					(file-png-load 
-					open
-					(string-append pfad "3.png")
-					"3"					
-					)
-				)
-		)
+		(pfad (string-append dir "\\"))
 		
 		(layer1 
 					(car
-						(gimp-layer-new-from-drawable 
-													(car 
-														(gimp-image-get-active-drawable img1)
-													)
-						img)
+						(gimp-file-load-layer 1 img (string-append pfad "1.png"))
 					)
 		)
 		
 		(layer2 	(car
-						(gimp-layer-new-from-drawable 
-													(car 
-														(gimp-image-get-active-drawable img2)
-													)
-						img)
+						(gimp-file-load-layer 1 img (string-append pfad "2.png"))
 					)
 		)
 		
 		(layer3 	(car
-						(gimp-layer-new-from-drawable 
-													(car 
-														(gimp-image-get-active-drawable img3)
-													)
-						img)
+						(gimp-file-load-layer 1 img (string-append pfad "3.png"))
 					)
 		)
-		
+		(display dir)
+		(newline)
 		;Standard Reihenfolge
 		;1111111112332111111123231
-		(folge '(1 1 1 1 1 1 1 1 1 2 3 3 2 1 1 1 1 1 1 1 2 3 2 3 1))
+		(folge (script-fu-string-to-intlist pattern))
+		
+		(layerlist(list layer1 layer2 layer3))
 
 	)
 	
-	(script-fu-add-layers-in-order layer1 layer2 layer3 img folge)
+	(script-fu-add-layers-in-order layerlist img folge)
 	
 	(gimp-display-new img)
 	(gimp-displays-flush)
@@ -141,20 +68,51 @@
 	)
 )
 
+(define (script-fu-string-to-intlist str)
+		
+		(let*
+		(
+			(charlist (string->list str))
+			(intlist)
+		)
+		
+		(define (iter i)
+			(if	(< i (length charlist)) 
+				(let*
+				(
+					(int (string->number (string(list-ref charlist i))))
+				)
+					(set! intlist (append intlist (list int)))
+					(iter (+ i 1))
+				)
+				intlist
+			)
+		)
+		(iter 0)
+		)
+)
+
 (script-fu-register 
 	"script-fu-zwinker-gif" 				;zu regestrierende funktion
 	"Zwinker Gif"							;name im menu
-	"Fügt die Bilder \"1.png\",\"2.png\" und \"3.png\" zusammen nach dem Standartmuster : 
+	"Fügt standartmäßig die Bilder nach dem folgendem Muster zusammen: 
 	1111111112332111111123231.
-	Für ein anderes Muster muss die stelle im Script geändert werden.
+	Die Bilder die normalerweise gewählt werden sind:
+	1.png, 2.png und 3.png
+	In dem ausgewähltem Ordner.
+	Die Bilddateien sind fest im Script integriert,
+	aktuell müssen diese noch im Script angepasst werden.
 	Es muss manuel gespeichert werden!"  	;Beschreibung
 	"BB20101997"  							;Author
 	"GNU GPL 3" 							;License
 	"01.08.2014" 							; erstell datum
-	"PNG -> GIF" 							; datei typen
+	"All by GIMP supported -> GIF" 							; datei typen
 
 	SF-VALUE 	"Width" 	"100"
 	SF-VALUE 	"Height" 	"150"
+	SF-STRING   "Pattern"	"1111111112332111111123231"
+	SF-DIRNAME  "Ordner"	""
 
  )
+ 
 (script-fu-menu-register "script-fu-zwinker-gif" "<Image>/File/Create/Text")
