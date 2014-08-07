@@ -1,73 +1,137 @@
-
-(define (script-fu-add-layers-in-order layerlist img form)
-
-	(if (< 0 (length form))
-			
-			(let* 
-			(
-				(head (car form))
-				(layerToCopy (list-ref layerlist (- head 1)))
-				(layer (car 
-							(gimp-layer-copy layerToCopy FALSE) 
-						)
-				)
-			)			
-				(gimp-item-set-name layer (string-append "Bild " (number->string head)))
-				
-				(gimp-image-add-layer img layer -1)		
-				
-				(script-fu-add-layers-in-order layerlist img (cdr form))
-			)
-		
-		0
-	)
-)
-
-(define (script-fu-zwinker-gif width height pattern dir)
+(define (script-fu-zwinker-gif width height pattern dir files)
 	(let*
 	(
-		;define local variables
-		;create new image;
 		(img (car (gimp-image-new width height RGB)))
 		
 		(open 1)
 		
 		(pfad (string-append dir "\\"))
 		
-		(layer1 
-					(car
-						(gimp-file-load-layer 1 img (string-append pfad "1.png"))
-					)
-		)
+		(layers "1.png:2.png:3.png")
 		
-		(layer2 	(car
-						(gimp-file-load-layer 1 img (string-append pfad "2.png"))
-					)
-		)
-		
-		(layer3 	(car
-						(gimp-file-load-layer 1 img (string-append pfad "3.png"))
-					)
-		)
-		(display dir)
-		(newline)
-		;Standard Reihenfolge
-		;1111111112332111111123231
 		(folge (script-fu-string-to-intlist pattern))
-		
-		(layerlist(list layer1 layer2 layer3))
+		(layerlist (script-fu-get-layerlist-by-string pfad layers img))
 
 	)
-	
 	(script-fu-add-layers-in-order layerlist img folge)
 	
 	(gimp-display-new img)
 	(gimp-displays-flush)
-	;(display pfad)
-	;(newline)
 	)
 )
+(define (script-fu-string-split expr str)
+	(define (iter strg liste)
+		(let*
+			
+			(
+				(i (string-search expr strg))
+			)
+			
+			(if (boolean? i)
+			
+				
+				(let*
+					()
+					(set! liste (append liste (list strg)))
+					liste
+				)
+			
+				(let*
+					()
+					(set! liste (append liste (list (substring strg 0 i))))
+					(iter (substring strg (+ i 1) (string-length strg)) liste)
+				)
+			)
+		)
+	)
+	(iter str '())	
+)
+(define (string-search expr str)
+	(let*
+		(
+			(expl (string-length expr))
+		)
+		(define (iter i)
+						(if (<= (+ i expl) (string-length str))
+							(let*
+								()
+								(if 
+									(string=? expr (substring str i (+ i expl)))
+									i
+									(iter (+ i 1))
+								)
+							)
+							#f
+						)
+		)
+		(iter 0)
+	)
+)
+(define (script-fu-get-layerlist-by-string dir str img)
+	
+	(let*
+		
+		(
+			(filenames (script-fu-string-split ":" str))
+			(layers)
+		)
+		(define (iter l)
+			(if (< 0 (length l))
+				
+				(let*
+					(
+						(layer 
+							(car
+								(gimp-file-load-layer 1 img 
+									(string-append dir (car l)
+									)
+								)
+							)
+						)
+					)
+					(display (car l))
+					(newline)
+					(set! layers (append layers (list layer)))
+					(iter (cdr l))
+				)
+				
+				(let*
+					()
+					layers
+				)	
+			)	
+		)
+		
+		(iter filenames)
+	
+	)
+)
+(define (script-fu-add-layers-in-order layerlist img form)
 
+	(if (< 0 (length form))
+			(if (and (<= (car form) (length layerlist)) (< 0 (car form)))
+				(let* 
+					(
+						(head (car form))
+						(layerToCopy (list-ref layerlist (- head 1)))
+						(layer (car 
+									(gimp-layer-copy layerToCopy FALSE) 
+								)
+						)
+					)			
+					(gimp-item-set-name layer (string-append "Bild " (number->string head)))
+				
+					(gimp-image-add-layer img layer -1)		
+				
+					(script-fu-add-layers-in-order layerlist img (cdr form))
+				)
+			
+				(script-fu-add-layers-in-order layerlist img (cdr form))
+			
+			)
+		0
+	)
+)
 (define (script-fu-string-to-intlist str)
 		
 		(let*
@@ -91,7 +155,6 @@
 		(iter 0)
 		)
 )
-
 (script-fu-register 
 	"script-fu-zwinker-gif" 				;zu regestrierende funktion
 	"Zwinker Gif"							;name im menu
@@ -110,9 +173,9 @@
 
 	SF-VALUE 	"Width" 	"100"
 	SF-VALUE 	"Height" 	"150"
-	SF-STRING   "Pattern"	"1111111112332111111123231"
+	SF-STRING   "Pattern"	"11111111123321111111232321"
 	SF-DIRNAME  "Ordner"	""
+	SF-STRING	"Filenames"	"1.png:2.png:3.png"
 
  )
- 
 (script-fu-menu-register "script-fu-zwinker-gif" "<Image>/File/Create/Text")
