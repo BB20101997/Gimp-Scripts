@@ -7,10 +7,9 @@
 		
 		(pfad (string-append dir "\\"))
 		
-		(layers "1.png:2.png:3.png")
-		
 		(folge (script-fu-string-to-intlist pattern))
-		(layerlist (script-fu-get-layerlist-by-string pfad layers img))
+		
+		(layerlist (script-fu-get-layerlist-by-string pfad files img))
 
 	)
 	(script-fu-add-layers-in-order layerlist img folge)
