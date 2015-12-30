@@ -1,21 +1,21 @@
 (define (script-fu-zwinker-gif width height pattern dir files)
 	(let*
 	(
-		(img (car (gimp-image-new width height RGB)))
+		(img (car (gimp-image-new width height RGB))) ;create image
 		
-		(open 1)
+		(open 1) ;?
 		
-		(pfad (string-append dir "\\"))
+		(pfad (string-append dir "\\")) ;modify the path of the files to work
 		
-		(folge (script-fu-string-to-intlist pattern))
+		(folge (script-fu-string-to-intlist pattern)) ;get the string Pattern as a list of integers
 		
-		(layerlist (script-fu-get-layerlist-by-string pfad files img))
+		(layerlist (script-fu-get-layerlist-by-string pfad files img)) ;load the layers in file order
 
 	)
-	(script-fu-add-layers-in-order layerlist img folge)
+	(script-fu-add-layers-in-order layerlist img folge) ;order the layers given the pattern and add them to the image
 	
-	(gimp-display-new img)
-	(gimp-displays-flush)
+	(gimp-display-new img) ;display the file
+	(gimp-displays-flush) ;fulsh i guess for undo?
 	)
 )
 (define (script-fu-string-split expr str)
@@ -66,6 +66,7 @@
 		(iter 0)
 	)
 )
+
 (define (script-fu-get-layerlist-by-string dir str img)
 	
 	(let*
@@ -79,12 +80,10 @@
 				
 				(let*
 					(
+						(f (car l))
 						(layer 
 							(car
-								(gimp-file-load-layer 1 img 
-									(string-append dir (car l)
-									)
-								)
+								(gimp-layer-new-from-visible (car (gimp-file-load 1 (string-append dir f) f)) img f)
 							)
 						)
 					)
@@ -105,6 +104,7 @@
 	
 	)
 )
+
 (define (script-fu-add-layers-in-order layerlist img form)
 
 	(if (< 0 (length form))
@@ -120,7 +120,7 @@
 					)			
 					(gimp-item-set-name layer (string-append "Bild " (number->string head)))
 				
-					(gimp-image-add-layer img layer -1)		
+					(gimp-image-insert-layer img layer 0 -1)		
 				
 					(script-fu-add-layers-in-order layerlist img (cdr form))
 				)
@@ -156,14 +156,14 @@
 )
 (script-fu-register 
 	"script-fu-zwinker-gif" 				;zu regestrierende funktion
-	"Zwinker Gif"							;name im menu
-	"F¸gt standartm‰ﬂig die Bilder nach dem folgendem Muster zusammen: 
+	"Images to Layers"						;name im menu
+	"F√ºgt standartm√§√üig die Bilder nach dem folgendem Muster zusammen: 
 	1111111112332111111123231.
-	Die Bilder die normalerweise gew‰hlt werden sind:
+	Die Bilder die normalerweise gew√§hlt werden sind:
 	1.png, 2.png und 3.png
-	In dem ausgew‰hltem Ordner.
+	In dem ausgew√§hltem Ordner.
 	Die Bilddateien sind fest im Script integriert,
-	aktuell m¸ssen diese noch im Script angepasst werden.
+	aktuell m√ºssen diese noch im Script angepasst werden.
 	Es muss manuel gespeichert werden!"  	;Beschreibung
 	"BB20101997"  							;Author
 	"GNU GPL 3" 							;License
@@ -177,4 +177,4 @@
 	SF-STRING	"Filenames"	"1.png:2.png:3.png"
 
  )
-(script-fu-menu-register "script-fu-zwinker-gif" "<Image>/File/Create/Text")
+(script-fu-menu-register "script-fu-zwinker-gif" "<Image>/File/Create/Animation")
